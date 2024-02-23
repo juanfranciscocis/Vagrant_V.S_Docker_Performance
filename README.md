@@ -262,6 +262,7 @@ Commercial support is available at
 
 
 Para realizar la prueba de carga, hemos utilizado el siguiente comando.
+Previamente hemos instalado wrk en la máquina cliente en el archivo Vagrantfile.
 
 ```
 wrk -t12 -c400 -d30s http://192.168.33.10
@@ -318,7 +319,165 @@ durante la ejecución de la prueba de carga. A comparación de la gráfica sin c
 de los performance cores se encuentra en descanso.
 ```
 
+# Experiment 2:
+
+You’ll repeat the same experiment as before. The only difference is that you have to run the web server in Docker instead of a virtual machine.
+
 # Report Experiment 2:
+
+### 2.1. Dockerfile for the server
+
+Para está primera sección se utilizó el siguiente Dockerfile para la creación de la imagen de Docker en la que se instalará el servidor web.
+
+![Dockerfile](./ResultadosDocker/imagen1.png)
+
+1. Para instalar la imagen usamos el comando:
+```
+docker pull nginx
+```
+
+2. Para correr la imagen usamos el comando:
+```
+docker run -it --rm -d -p 8080:80 --name web nginx
+
+Output
+Unable to find image 'nginx:latest' locally
+Unable to find image 'nginx:latest' locally
+latest: Pulling from library/nginx
+f546e941f15b: Pull complete 
+2d258780861a: Pull complete 
+a7d6e9feb830: Pull complete 
+42e0f9421c7a: Pull complete 
+14a95f763a2f: Pull complete 
+164c21b63fde: Pull complete 
+5b452a5fd809: Pull complete 
+Digest: sha256:c26ae7472d624ba1fafd296e73cecc4f93f853088e6a9c13c0d52f6ca5865107
+Status: Downloaded newer image for nginx:latest
+968e1c1398ef5a7a869e023e3ecfab5fcc05422b098df27c0c0cc8360623fe9c
+```
+Este comando consta de los siguientes parámetros:
+- -it: para correr el contenedor en modo interactivo.
+- --rm: para remover el contenedor una vez que se detenga.
+- -d: para correr el contenedor en modo background.
+- -p 8080:80: para mapear el puerto 8080 del host al puerto 80 del contenedor.
+- --name web: para asignar un nombre al contenedor.
+- nginx: nombre de la imagen a correr.
+
+3. Verificamos que el contenedor se encuentre corriendo con el comando:
+```
+docker ps
+
+Output
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                  NAMES
+968e1c1398ef   nginx     "/docker-entrypoint.…"   41 minutes ago   Up 41 minutes   0.0.0.0:8080->80/tcp   web
+```
+
+## Cliente
+1. Desde el terminal y navegador local verificamos que tenemos acceso al servidor web.
+
+```
+curl 127.0.0.1:8080
+```
+
+```
+Output
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
+
+### 2.3. Load test
+
+En este caso debido a que estamos haciendo uso del puerto localhost:8080,
+hemos decidido instalar wrk en la máquina local, mac con procesador M2.
+
+1. Para instalar wrk en la máquina local usamos el siguiente comando:
+```
+brew install wrk
+```
+
+2. Para realizar la prueba de carga, hemos utilizado el siguiente comando.
+```
+wrk -t12 -c400 -d30s http://127.0.0.1:8080
+
+# Este comando nos regresó el siguiente resultado
+Output
+Running 30s test @ http://127.0.0.1:8080
+  12 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     7.54ms    3.22ms 102.60ms   87.61%
+    Req/Sec     4.48k   753.23     6.12k    67.31%
+  1605566 requests in 30.02s, 1.28GB read
+  Socket errors: connect 0, read 387, write 0, timeout 0
+Requests/sec:  53491.64
+Transfer/sec:     43.51MB
+```
+
+### 2.4. Resultados de la prueba de carga
+
+Imagen 1. Uso de CPU y memoria de la máquina local. Sin carga.
+![Imagen 1](./ResultadosDocker/imagen2.png)
+
+Imagen 2. Uso de CPU y memoria de la máquina local. Con carga.
+![Imagen 2](./ResultadosDocker/imagen3.png)
+
+```agsl
+Como podemos observar, el uso de CPU es menor en comparación con la máquina virtual.
+Esto se debe a que el contenedor de Docker utiliza menos recursos que una máquina virtual.
+```
+
+Imagen 3. Uso de CPU y memoria de la máquina local. Sin carga. Grafica.
+![Imagen 3](./ResultadosDocker/imagen4.png)
+
+Imagen 4. Uso de CPU y memoria de la máquina local. Con carga. Grafica.
+![Imagen 4](./ResultadosDocker/imagen5.png)
+
+```agsl
+Como podemos observa los performance cores de la máquina local se encuentran en un 100% de uso
+durante la ejecución de la prueba de carga. A comparación de la gráfica sin carga, donde el uso
+de los performance cores se encuentra en descanso. Esto es similar a lo que observamos en la máquina virtual, pero la diferencia se encuentra en
+el estado idle del contenedor de Docker, pues este utiliza menos recursos.
+
+De igual forma la utilizacion de los efficiency cores subió a un 60% lo que nos indica que el contenedor puede recibir más carga.
+
+```
+
+# Conclusiones
+Como pudimos observar, el uso de contenedores de Docker es más eficiente en términos de recursos que el uso de máquinas virtuales. Esto se debe a que los contenedores comparten el kernel del sistema operativo del host, lo que permite que los contenedores sean más ligeros y rápidos que las máquinas virtuales.
+
+Docker logra hacer el máximo uso de los recursos del sistema, lo que permite que los contenedores sean más eficientes en términos de recursos que las máquinas virtuales.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
